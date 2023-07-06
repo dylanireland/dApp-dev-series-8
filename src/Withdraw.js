@@ -3,40 +3,42 @@ import {
 	CLPublicKey,
 	CLValueBuilder,
 	RuntimeArgs,
+	CLByteArray,
+	decodeBase16,
 } from "casper-js-sdk";
-import axios from "axios";
 
 function Deposit(props) {
 	return <button onClick={() => deposit(props)}>Deposit</button>;
 }
 
+async function getWasm() {
+	const result = await fetch("http://localhost:3001/getDepositWASM");
+	if (!result.ok) {
+		throw new Error(await result.text());
+	}
+	const buffer = await result.arrayBuffer();
+	return new Uint8Array(buffer);
+}
+
 async function deposit(props) {
 	let wasm;
 	try {
-		const result = await fetch("http://localhost:3001/getDepositWASM");
-		if (!result.ok) {
-			throw new Error(await result.text());
-		}
-		const buffer = await result.arrayBuffer();
-		wasm = new Uint8Array(buffer);
+		wasm = await getWasm();
 	} catch (error) {
-		console.error(error.message);
+		console.error(error);
 		return;
 	}
-
-	const contractHashUint8Array = new TextEncoder().encode(props.contractHash);
+	const clContractHash = new CLByteArray(decodeBase16(props.contractHash));
 
 	const args = RuntimeArgs.fromMap({
 		amount: CLValueBuilder.u512(10e9),
-		contract_hash: CLValueBuilder.key(
-			CLValueBuilder.byteArray(contractHashUint8Array)
-		), // CANT BUILD CLKey
+		contract_hash: CLValueBuilder.key(clContractHash),
 	});
 
 	const deploy = props.contractClient.install(
 		wasm,
 		args,
-		"1000000000",
+		"10000000000",
 		CLPublicKey.fromHex(props.publicKey),
 		"casper-test"
 	);
@@ -58,12 +60,16 @@ async function deposit(props) {
 			CLPublicKey.fromHex(props.publicKey)
 		);
 		const signedDeployJson = DeployUtil.deployToJson(signedDeploy);
-		const deployHash = await axios.post(
-			"http://localhost:3001/deploy",
-			signedDeployJson,
-			{ headers: { "Content-Type": "application/json" } }
-		);
-		console.log(deployHash.data);
+		const response = await fetch("http://localhost:3001/deploy", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(signedDeployJson),
+		});
+		if (!response.ok) {
+			const errorMessage = await response.text();
+			throw new Error(errorMessage);
+		}
+		console.log(await response.text());
 	} catch (error) {
 		console.error(error.message);
 	}

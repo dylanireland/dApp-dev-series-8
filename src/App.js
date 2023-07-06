@@ -1,7 +1,7 @@
 import logo from "./logo.svg";
 import "./App.css";
 import Wallet from "./Wallet";
-import Deposit from "./Deposit";
+import Interact from "./Interact";
 import React from "react";
 import { CasperClient, Contracts } from "casper-js-sdk";
 
@@ -23,21 +23,22 @@ function App() {
 	const contractHash =
 		"cb781f66f78a398bf1709c4dac40b3cca17106824ea88ca9daa5b822421c9b57";
 
-	if (publicKey == null) {
-		return <Wallet setPublicKey={setPublicKey} provider={provider} />;
-	} else {
-		return (
-			<>
-				<Deposit
-					contractHash={contractHash}
-					publicKey={publicKey}
-					casperClient={casperClient}
-					contractClient={contractClient}
-					provider={provider}
-				/>
-			</>
-		);
-	}
+	return (
+		<>
+			<Wallet
+				publicKey={publicKey}
+				setPublicKey={setPublicKey}
+				provider={provider}
+			/>
+			<Interact
+				contractHash={contractHash}
+				publicKey={publicKey}
+				casperClient={casperClient}
+				contractClient={contractClient}
+				provider={provider}
+			/>
+		</>
+	);
 }
 
 export default App;

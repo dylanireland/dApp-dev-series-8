@@ -1,9 +1,17 @@
 function Wallet(props) {
-	return (
-		<button onClick={() => requestConnection(props)}>
-			Connect to Casper Wallet
-		</button>
-	);
+	if (props.publicKey) {
+		return (
+			<button onClick={() => disconnect(props)}>
+				Disconnect from Casper Wallet
+			</button>
+		);
+	} else {
+		return (
+			<button onClick={() => requestConnection(props)}>
+				Connect to Casper Wallet
+			</button>
+		);
+	}
 }
 
 function requestConnection(props) {
@@ -11,6 +19,15 @@ function requestConnection(props) {
 		console.log("Connected?: " + connected);
 		if (connected) {
 			getActivePublicKey(props);
+		}
+	});
+}
+
+function disconnect(props) {
+	props.provider.disconnectFromSite().then(disconnected => {
+		console.log("Disconnected?: " + disconnected);
+		if (disconnected) {
+			props.setPublicKey(null);
 		}
 	});
 }
